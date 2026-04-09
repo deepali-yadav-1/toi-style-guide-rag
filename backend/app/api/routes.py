@@ -20,6 +20,16 @@ router = APIRouter()
 logger = get_logger(__name__)
 
 
+@router.get("/")
+async def root() -> dict[str, str]:
+    return {
+        "name": "TOI Style Guide RAG API",
+        "status": "ok",
+        "docs": "/docs",
+        "health": "/health",
+    }
+
+
 @router.get("/health", response_model=HealthResponse)
 async def healthcheck() -> HealthResponse:
     return HealthResponse(status="ok")
