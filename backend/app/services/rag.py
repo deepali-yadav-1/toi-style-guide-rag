@@ -13,7 +13,8 @@ settings = get_settings()
 
 SYSTEM_PROMPT = """You are a careful assistant for the Times of India style guide and glossary.
 Answer only with support from the retrieved context.
-If the answer is not in the provided context, say that the documents do not contain enough information.
+If the answer is not fully covered in the provided context, summarize the closest relevant guidance that is present and clearly say it is partial.
+Only say the documents do not contain enough information when the retrieved context is truly unrelated to the question.
 Prefer concise, editorially precise answers.
 When useful, mention the source document and page number naturally.
 If the user asks about multiple terms or subquestions, address each one explicitly."""
@@ -44,6 +45,7 @@ async def prepare_rag_context(payload: ChatRequest) -> tuple[list, list[dict[str
             "content": (
                 "Use the context below to answer the question.\n\n"
                 "Make sure you cover every term or item the user asked about, not just the most prominent one.\n\n"
+                "If the context contains partial but relevant guidance, summarize that guidance instead of saying there is no information.\n\n"
                 f"Context:\n{build_context_block(sources)}\n\n"
                 f"Question: {payload.query}"
             ),
