@@ -183,4 +183,87 @@ Request:
 - For larger corpora, batch inserts and embeddings more aggressively.
 - You can add a `/chat/stream` SSE endpoint later without changing the retrieval layer.
 - For stricter grounding, tune the prompt and add answer refusal when top similarity is below a threshold.
-# toi-style-guide-rag
+
+## 7. Deployment
+
+### Vercel
+
+Best use in this repo:
+
+- Deploy the FastAPI backend as one Vercel project with `backend` as the project root.
+- Optionally deploy the React frontend as a second Vercel project with `frontend` as the root.
+
+Backend notes:
+
+- Vercel supports Python applications and FastAPI on its Python runtime. Official docs: [Vercel Python](https://vercel.com/docs/functions/runtimes/python), [Vercel Frameworks](https://vercel.com/docs/frameworks/backend/fastapi).
+- This repo now includes [index.py](/Users/deepaliyadav/Desktop/codebase/TIMES_CODEBASE/TOI-style-guide-RAG/backend/index.py), so if `backend` is the Vercel root, Vercel can import the FastAPI app directly.
+
+Backend environment variables to set in Vercel:
+
+```env
+OPENAI_API_KEY=...
+OPENAI_CHAT_MODEL=gpt-4.1-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+DATABASE_URL=postgresql://...
+OPENAI_TRUST_ENV=false
+OPENAI_VERIFY_SSL=true
+EMBEDDING_BATCH_SIZE=64
+DOCUMENTS_DIR=..
+CORS_ORIGINS=https://your-frontend-domain.vercel.app,https://your-frontend-domain.netlify.app
+```
+
+Frontend environment variable in Vercel:
+
+```env
+VITE_API_BASE_URL=https://your-backend-project.vercel.app
+```
+
+Important:
+
+- The backend reads the PDFs from the repository, so keep the PDF files committed in the deployment.
+- Serverless streaming can work on Vercel, but test `/chat/stream` after deploy. If your plan/runtime limits interfere, fall back temporarily to `/chat`.
+
+### Netlify
+
+Recommended use in this repo:
+
+- Deploy the React frontend on Netlify.
+- Keep the FastAPI backend on Vercel or another Python-friendly host.
+
+Why:
+
+- Netlify’s core Functions platform is primarily oriented around JavaScript/TypeScript and Go workflows from their current platform docs: [Netlify Functions](https://www.netlify.com/platform/core/functions).
+- For this exact FastAPI backend, Vercel is the simpler host.
+
+This repo now includes [netlify.toml](/Users/deepaliyadav/Desktop/codebase/TIMES_CODEBASE/TOI-style-guide-RAG/netlify.toml) for the frontend build.
+
+Netlify frontend settings:
+
+- Base directory: `frontend`
+- Build command: `npm run build`
+- Publish directory: `dist`
+
+Frontend environment variable in Netlify:
+
+```env
+VITE_API_BASE_URL=https://your-backend-project.vercel.app
+```
+
+### Recommended architecture
+
+For the least friction:
+
+1. Deploy `backend` to Vercel.
+2. Deploy `frontend` to Netlify.
+3. Set `VITE_API_BASE_URL` in Netlify to the Vercel backend URL.
+4. Set `CORS_ORIGINS` in Vercel to allow the Netlify frontend domain.
+
+### Deploy checklist
+
+1. Run the Supabase SQL from [init.sql](/Users/deepaliyadav/Desktop/codebase/TIMES_CODEBASE/TOI-style-guide-RAG/sql/init.sql).
+2. Confirm the PDFs are committed in the repo.
+3. Deploy backend from `backend` root on Vercel.
+4. Deploy frontend from `frontend` root on Netlify or Vercel.
+5. Set `VITE_API_BASE_URL` to the backend URL.
+6. Set `CORS_ORIGINS` to the deployed frontend domain.
+7. After deploy, call `/status`, then run `/ingest`, then test `/chat` and `/chat/stream`.
